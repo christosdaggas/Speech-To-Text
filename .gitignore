@@ -1,0 +1,53 @@
+# Rust build artifacts
+/target/
+
+# Packaging build trees and binaries (built locally / via CI; not source)
+/dist/
+/build/
+/data/locale/
+*.rpm
+*.deb
+
+# Scratch / working notes
+/review.md
+/GATES.md
+/plans/
+
+# Local assistant settings
+/.claude/
+/.unlazy/
+/.unlazy-hook-state.json
+/.opencode/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials, local recordings, logs and machine-specific state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+secrets*.json
+config.local.*
+*.log
+nohup.out
+__pycache__/
+*.pyc
+/config.json
+/history.json
+/models/
+/recordings/
+/benchmark-results/

@@ -1,0 +1,493 @@
+// Copyright (C) 2026 Christos A. Daggas
+// SPDX-License-Identifier: MIT
+
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{Device, SampleFormat, Stream, StreamConfig};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use tracing::{error, info, warn};
+
+use super::buffer::{AudioBuffer, RawAudioSnapshot};
+use crate::error::{AppError, AppResult};
+
+use async_channel;
+
+/// Whisper expects 16kHz mono f32 audio.
+pub const WHISPER_SAMPLE_RATE: u32 = 16_000;
+
+#[derive(Debug, Clone)]
+pub struct AudioDevice {
+    pub name: String,
+    pub is_default: bool,
+}
+
+pub fn list_input_devices() -> AppResult<Vec<AudioDevice>> {
+    let host = cpal::default_host();
+
+    let default_device_name = host.default_input_device().and_then(|d| d.name().ok());
+
+    let devices: Vec<AudioDevice> = host
+        .input_devices()
+        .map_err(|e| AppError::Audio(format!("Failed to enumerate input devices: {}", e)))?
+        .filter_map(|device| {
+            device.name().ok().map(|name| {
+                let is_default = default_device_name
+                    .as_ref()
+                    .map(|d| d == &name)
+                    .unwrap_or(false);
+                AudioDevice { name, is_default }
+            })
+        })
+        .collect();
+
+    if devices.is_empty() {
+        return Err(AppError::NoAudioDevices);
+    }
+
+    info!("Found {} audio input devices", devices.len());
+    Ok(devices)
+}
+
+/// Get a cpal device by name, or the default input device. The `bool` reports
+/// whether the request was satisfied exactly (the named device was found, or
+/// the default was explicitly requested) — `false` means the named device was
+/// absent and the default was substituted.
+fn get_device(device_name: Option<&str>) -> AppResult<(Device, bool)> {
+    let host = cpal::default_host();
+
+    if let Some(name) = device_name {
+        let devices = host
+            .input_devices()
+            .map_err(|e| AppError::Audio(format!("Failed to enumerate devices: {}", e)))?;
+
+        for device in devices {
+            if let Ok(n) = device.name() {
+                if n == name {
+                    return Ok((device, true));
+                }
+            }
+        }
+        warn!("Device '{}' not found, falling back to default", name);
+        let fallback = host
+            .default_input_device()
+            .ok_or(AppError::NoAudioDevices)?;
+        return Ok((fallback, false));
+    }
+
+    host.default_input_device()
+        .map(|d| (d, true))
+        .ok_or(AppError::NoAudioDevices)
+}
+
+/// Recording state shared between the audio thread and the main thread.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecordingState {
+    Idle,
+    Recording,
+    Paused,
+}
+
+pub struct AudioCapture {
+    stream: Option<Stream>,
+    buffer: Arc<Mutex<AudioBuffer>>,
+    paused: Arc<AtomicBool>,
+    state: RecordingState,
+    waveform_sender: Option<async_channel::Sender<Vec<f32>>>,
+    /// Resolved device handle, keyed by the requested device name. Finding a
+    /// specific microphone requires enumerating every input device — on some
+    /// backends that probes all PCMs and is slow enough to clip the first
+    /// words after the hotkey — so the handle is reused across recordings and
+    /// invalidated when it stops answering.
+    cached_device: Option<(Option<String>, Device)>,
+    /// Set by the cpal error callback when the stream dies mid-recording
+    /// (device unplugged, backend restart). The UI timers poll it via
+    /// [`Self::take_stream_error`] and auto-stop — otherwise the app showed a
+    /// live "Recording" state over a dead stream and lost everything spoken
+    /// after the failure.
+    stream_error: Arc<Mutex<Option<String>>>,
+}
+
+impl AudioCapture {
+    pub fn new() -> Self {
+        Self {
+            stream: None,
+            buffer: Arc::new(Mutex::new(AudioBuffer::new(WHISPER_SAMPLE_RATE))),
+            paused: Arc::new(AtomicBool::new(false)),
+            state: RecordingState::Idle,
+            waveform_sender: None,
+            cached_device: None,
+            stream_error: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    /// Take (and clear) the error reported by the stream's error callback.
+    pub fn take_stream_error(&self) -> Option<String> {
+        self.stream_error
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take()
+    }
+
+    /// Resolve the capture device, reusing the cached handle when the same
+    /// device is requested again. Only an EXACT match is cached: caching the
+    /// default-device fallback under the requested mic's name would pin the
+    /// wrong microphone forever once the real one comes back.
+    fn resolve_device(&mut self, device_name: Option<&str>) -> AppResult<Device> {
+        if let Some((key, dev)) = &self.cached_device {
+            if key.as_deref() == device_name {
+                return Ok(dev.clone());
+            }
+        }
+        let (dev, exact) = get_device(device_name)?;
+        if exact {
+            self.cached_device = Some((device_name.map(str::to_string), dev.clone()));
+        } else {
+            self.cached_device = None;
+        }
+        Ok(dev)
+    }
+
+    pub fn set_waveform_sender(&mut self, sender: async_channel::Sender<Vec<f32>>) {
+        self.waveform_sender = Some(sender);
+    }
+
+    pub fn start_recording(&mut self, device_name: Option<&str>) -> AppResult<()> {
+        // Always start a clean recording. Dropping any existing stream and
+        // resetting state prevents a previous (possibly stuck) capture from
+        // bleeding old audio into the new one — which manifested as the app
+        // "replaying" old text no matter what was said.
+        self.stream = None;
+        self.paused.store(false, Ordering::Relaxed);
+        self.state = RecordingState::Idle;
+
+        let mut device = self.resolve_device(device_name)?;
+
+        // Get supported config, prefer 16kHz mono but accept what's available.
+        // A failure here usually means the cached handle went stale (device
+        // unplugged / backend restarted) — drop it and enumerate afresh once.
+        let mut supported_config = device.default_input_config();
+        if supported_config.is_err() {
+            self.cached_device = None;
+            device = self.resolve_device(device_name)?;
+            supported_config = device.default_input_config();
+        }
+        let supported_config = supported_config
+            .map_err(|e| AppError::Audio(format!("No supported input config: {}", e)))?;
+        let device_name_str = device.name().unwrap_or_else(|_| "unknown".into());
+        info!("Starting recording on device: {}", device_name_str);
+
+        let sample_rate = supported_config.sample_rate().0;
+        let channels = supported_config.channels() as u32;
+        let sample_format = supported_config.sample_format();
+
+        info!(
+            "Device config: {}Hz, {} channels, {:?}",
+            sample_rate, channels, sample_format
+        );
+
+        let config = StreamConfig {
+            channels: supported_config.channels(),
+            sample_rate: supported_config.sample_rate(),
+            buffer_size: cpal::BufferSize::Default,
+        };
+
+        // Reset buffer for new recording (recover the lock if it was poisoned by
+        // a panic, instead of panicking again and wedging recording for good).
+        {
+            let mut buf = self.buffer.lock().unwrap_or_else(|e| e.into_inner());
+            buf.clear();
+            buf.set_source_params(sample_rate, channels);
+        }
+        *self.stream_error.lock().unwrap_or_else(|e| e.into_inner()) = None;
+
+        let buffer = self.buffer.clone();
+        let paused = self.paused.clone();
+        let waveform_sender = self.waveform_sender.clone();
+        let error_slot = self.stream_error.clone();
+        let error_slot_i16 = self.stream_error.clone();
+        // Contended-chunk spill: when a consumer briefly holds the buffer lock
+        // (the live-preview tail copy), the chunk is stashed here and flushed on
+        // the next callback instead of being dropped — a dropped chunk is an
+        // audible gap that corrupts words in the transcript. Bounded so a stuck
+        // consumer can't make the callback allocate forever.
+        const SPILL_CAP_SAMPLES: usize = 500_000;
+
+        // Cap a single live recording at MAX_RECORDING_SECS (raw source samples
+        // = secs × rate × channels). Independent of the buffer's memory backstop;
+        // applies only to live capture, not to decoded files.
+        let max_live_samples: usize = (crate::limits::MAX_RECORDING_SECS)
+            .saturating_mul(sample_rate as usize)
+            .saturating_mul(channels.max(1) as usize);
+        // Once the cap is hit, every later callback drops its audio. Report it
+        // through the stream-error slot exactly once so the UI pollers stop and
+        // transcribe what was captured — before this, the app kept showing a
+        // live "Recording" state with a frozen timer while discarding speech.
+        let limit_slot = self.stream_error.clone();
+        let limit_slot_i16 = self.stream_error.clone();
+        let limit_message = move || {
+            format!(
+                "Recording reached the memory or {}-minute limit; recording stopped",
+                crate::limits::MAX_RECORDING_SECS / 60
+            )
+        };
+        let limit_message_i16 = limit_message;
+
+        let stream = match sample_format {
+            SampleFormat::F32 => {
+                let waveform_interval = (sample_rate as usize / 30)
+                    .saturating_mul(channels.max(1) as usize)
+                    .max(1);
+                let mut waveform_samples = 0usize;
+                let mut spill: Vec<f32> = Vec::new();
+                let mut limit_reported = false;
+                device.build_input_stream(
+                    &config,
+                    move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                        if paused.load(Ordering::Relaxed) || limit_reported {
+                            return;
+                        }
+                        if let Ok(mut buf) = buffer.try_lock() {
+                            let mut accepted = true;
+                            if !spill.is_empty() {
+                                accepted = buf.raw_len().saturating_add(spill.len())
+                                    <= max_live_samples
+                                    && buf.push_samples(&spill);
+                                spill.clear();
+                            }
+                            accepted = accepted
+                                && buf.raw_len().saturating_add(data.len()) <= max_live_samples
+                                && buf.push_samples(data);
+                            if !accepted {
+                                limit_reported = true;
+                                *limit_slot.lock().unwrap_or_else(|e| e.into_inner()) =
+                                    Some(limit_message());
+                            }
+                        } else if spill.len() + data.len() <= SPILL_CAP_SAMPLES {
+                            spill.extend_from_slice(data);
+                        } else {
+                            limit_reported = true;
+                            *limit_slot.lock().unwrap_or_else(|e| e.into_inner()) =
+                                Some("Audio capture could not keep up; recording stopped".into());
+                        }
+
+                        waveform_samples = waveform_samples.saturating_add(data.len());
+                        if waveform_samples >= waveform_interval {
+                            waveform_samples %= waveform_interval;
+                        } else {
+                            return;
+                        }
+
+                        // Waveform frames are lossy UI data: never block capture.
+                        if let Some(ref sender) = waveform_sender {
+                            let n_bars = 64usize;
+                            if data.len() >= n_bars {
+                                let chunk_size = data.len() / n_bars;
+                                let amplitudes: Vec<f32> = (0..n_bars)
+                                    .map(|i| {
+                                        let start = i * chunk_size;
+                                        let end = (start + chunk_size).min(data.len());
+                                        let slice = &data[start..end];
+                                        slice.iter().map(|s| s.abs()).sum::<f32>()
+                                            / slice.len() as f32
+                                    })
+                                    .collect();
+                                let _ = sender.try_send(amplitudes);
+                            }
+                        }
+                    },
+                    move |err| {
+                        error!("Audio stream error: {}", err);
+                        *error_slot.lock().unwrap_or_else(|e| e.into_inner()) =
+                            Some(err.to_string());
+                    },
+                    None,
+                )
+            }
+            SampleFormat::I16 => {
+                let buffer = self.buffer.clone();
+                let paused = self.paused.clone();
+                let waveform_sender = self.waveform_sender.clone();
+                let waveform_interval = (sample_rate as usize / 30)
+                    .saturating_mul(channels.max(1) as usize)
+                    .max(1);
+                let mut waveform_samples = 0usize;
+                let mut spill: Vec<i16> = Vec::new();
+                let mut limit_reported = false;
+                device.build_input_stream(
+                    &config,
+                    move |data: &[i16], _: &cpal::InputCallbackInfo| {
+                        if paused.load(Ordering::Relaxed) || limit_reported {
+                            return;
+                        }
+                        if let Ok(mut buf) = buffer.try_lock() {
+                            let mut accepted = true;
+                            if !spill.is_empty() {
+                                accepted = buf.raw_len().saturating_add(spill.len())
+                                    <= max_live_samples
+                                    && buf.push_i16_samples(&spill);
+                                spill.clear();
+                            }
+                            accepted = accepted
+                                && buf.raw_len().saturating_add(data.len()) <= max_live_samples
+                                && buf.push_i16_samples(data);
+                            if !accepted {
+                                limit_reported = true;
+                                *limit_slot_i16.lock().unwrap_or_else(|e| e.into_inner()) =
+                                    Some(limit_message_i16());
+                            }
+                        } else if spill.len() + data.len() <= SPILL_CAP_SAMPLES {
+                            spill.extend_from_slice(data);
+                        } else {
+                            limit_reported = true;
+                            *limit_slot_i16.lock().unwrap_or_else(|e| e.into_inner()) =
+                                Some("Audio capture could not keep up; recording stopped".into());
+                        }
+
+                        waveform_samples = waveform_samples.saturating_add(data.len());
+                        if waveform_samples >= waveform_interval {
+                            waveform_samples %= waveform_interval;
+                        } else {
+                            return;
+                        }
+
+                        if let Some(ref sender) = waveform_sender {
+                            let n_bars = 64usize;
+                            if data.len() >= n_bars {
+                                let chunk_size = data.len() / n_bars;
+                                let amplitudes: Vec<f32> = (0..n_bars)
+                                    .map(|i| {
+                                        let start = i * chunk_size;
+                                        let end = (start + chunk_size).min(data.len());
+                                        let slice = &data[start..end];
+                                        slice
+                                            .iter()
+                                            .map(|s| s.unsigned_abs() as f32 / i16::MAX as f32)
+                                            .sum::<f32>()
+                                            / slice.len() as f32
+                                    })
+                                    .collect();
+                                let _ = sender.try_send(amplitudes);
+                            }
+                        }
+                    },
+                    move |err| {
+                        error!("Audio stream error: {}", err);
+                        *error_slot_i16.lock().unwrap_or_else(|e| e.into_inner()) =
+                            Some(err.to_string());
+                    },
+                    None,
+                )
+            }
+            format => {
+                return Err(AppError::Audio(format!(
+                    "Unsupported sample format: {:?}",
+                    format
+                )));
+            }
+        }
+        .map_err(|e| {
+            // The cached handle may be the culprit (device vanished between
+            // config query and stream build) — drop it so the next attempt
+            // re-enumerates instead of failing forever on a stale handle.
+            self.cached_device = None;
+            AppError::Audio(format!("Failed to build input stream: {}", e))
+        })?;
+
+        stream.play().map_err(|e| {
+            self.cached_device = None;
+            AppError::Audio(format!("Failed to start stream: {}", e))
+        })?;
+
+        self.stream = Some(stream);
+        self.paused.store(false, Ordering::Relaxed);
+        self.state = RecordingState::Recording;
+
+        info!("Recording started");
+        Ok(())
+    }
+
+    pub fn pause(&mut self) {
+        if self.state == RecordingState::Recording {
+            self.paused.store(true, Ordering::Relaxed);
+            self.state = RecordingState::Paused;
+            info!("Recording paused");
+        }
+    }
+
+    pub fn resume(&mut self) {
+        if self.state == RecordingState::Paused {
+            self.paused.store(false, Ordering::Relaxed);
+            self.state = RecordingState::Recording;
+            info!("Recording resumed");
+        }
+    }
+
+    /// Stop recording and return the captured audio as mono 16kHz f32 PCM.
+    pub fn stop_recording(&mut self) -> AppResult<Vec<f32>> {
+        Ok(self.stop_recording_snapshot()?.condition())
+    }
+
+    /// Stop immediately and detach raw PCM so expensive conditioning can run on
+    /// a worker instead of the GTK thread.
+    pub fn stop_recording_snapshot(&mut self) -> AppResult<RawAudioSnapshot> {
+        if self.state == RecordingState::Idle {
+            return Ok(RawAudioSnapshot::empty(WHISPER_SAMPLE_RATE));
+        }
+
+        self.stream = None;
+        self.paused.store(false, Ordering::Relaxed);
+        self.state = RecordingState::Idle;
+
+        let snapshot = self
+            .buffer
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take_raw_snapshot();
+
+        info!("Recording stopped; raw audio detached for processing");
+        Ok(snapshot)
+    }
+
+    /// Non-destructive RAW snapshot of the audio tail captured so far, WITHOUT
+    /// stopping recording or clearing the buffer. Only the O(n) copy happens
+    /// under the buffer lock; the expensive conditioning is the caller's job
+    /// (run it on a worker, never the GTK thread).
+    pub fn snapshot_raw(&self, max_samples: usize) -> crate::audio::buffer::RawAudioSnapshot {
+        self.buffer
+            .lock()
+            .map(|b| b.tail_raw_snapshot(max_samples))
+            .unwrap_or_else(|_| crate::audio::buffer::RawAudioSnapshot::empty(WHISPER_SAMPLE_RATE))
+    }
+
+    /// While-recording chunk peek (see [`AudioBuffer::peek_stable_chunk`]).
+    pub fn peek_stable_chunk(
+        &self,
+        min_secs: f32,
+        max_secs: f32,
+    ) -> Option<crate::audio::buffer::ChunkCut> {
+        self.buffer
+            .lock()
+            .ok()
+            .and_then(|b| b.peek_stable_chunk(min_secs, max_secs))
+    }
+
+    /// Commit a successfully decoded chunk's watermark (see
+    /// [`crate::audio::buffer::AudioBuffer::commit_consumed`]).
+    pub fn commit_consumed(&self, watermark: usize) {
+        if let Ok(mut b) = self.buffer.lock() {
+            b.commit_consumed(watermark);
+        }
+    }
+
+    pub fn state(&self) -> RecordingState {
+        self.state
+    }
+
+    pub fn recording_duration_secs(&self) -> f32 {
+        if let Ok(buf) = self.buffer.lock() {
+            buf.duration_secs()
+        } else {
+            0.0
+        }
+    }
+}

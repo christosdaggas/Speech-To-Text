@@ -1,0 +1,234 @@
+// Copyright (C) 2026 Christos A. Daggas
+// SPDX-License-Identifier: MIT
+
+//! System tray icon via the StatusNotifierItem spec (`ksni`).
+//!
+//! Lets the app run in the background without its main window: the tray icon
+//! and global shortcut stay active. Works natively on KDE; on GNOME it requires
+//! the "AppIndicator and KStatusNotifierItem Support" extension (the tray host).
+//! Best-effort: if no tray host is present, registration fails quietly and the
+//! app keeps working via the main window and global shortcut.
+//!
+//! `ksni::Tray` must be `Send + 'static`, so the tray struct holds only a
+//! channel sender and the pre-decoded icon; menu clicks are forwarded to the
+//! glib main loop.
+//!
+//! The icon is shipped as `IconPixmap` (raw ARGB32 rasterised from the symbolic
+//! SVG embedded in the binary) rather than left to an `IconName` +
+//! `IconThemePath` lookup.
+//! Name-based lookup is unreliable: every host implements the search differently
+//! and most only probe `<theme>/<size>/{apps,status,panel}/`, so a symbolic icon
+//! living in `<theme>/symbolic/apps/` is never found and the tray shows an empty
+//! slot. Sending the pixels makes the icon independent of the host's search
+//! rules, of icon caches and of whether the app is installed at all.
+//! `icon_name`/`icon_theme_path` stay as a secondary path for hosts that prefer
+//! a themed (recolourable) icon.
+
+use ksni::menu::{MenuItem, StandardItem};
+use ksni::{Tray, TrayMethods};
+
+use crate::i18n::gettext;
+
+/// Monochrome tray artwork: the symbolic application icon itself, embedded and
+/// rasterised at startup. The SVG is the single source of truth — editing it
+/// changes what the tray draws, with no export step to forget. (Pre-rendered
+/// PNGs used to sit here and silently kept showing the previous artwork after
+/// the icon was redrawn.)
+const TRAY_SVG: &[u8] = include_bytes!(
+    "../data/icons/hicolor/symbolic/apps/com.chrisdaggas.speech-to-text-symbolic.svg"
+);
+
+/// Sizes offered to the host so it can pick the one matching its panel instead
+/// of rescaling a single bitmap.
+const TRAY_SIZES: [i32; 6] = [16, 22, 24, 32, 48, 64];
+
+#[derive(Debug, Clone, Copy)]
+pub enum TrayAction {
+    Dictate,
+    /// Transform the current selection/clipboard with the active AI preset.
+    TransformSelection,
+    Open,
+    Quit,
+}
+
+struct SttTray {
+    tx: async_channel::Sender<TrayAction>,
+    /// Rasterised once at startup; `ksni::Icon` is plain data, so it moves to
+    /// the tray's thread with the struct.
+    icons: Vec<ksni::Icon>,
+}
+
+impl SttTray {
+    fn emit(&self, action: TrayAction) {
+        // Non-blocking: never stall the tray's D-Bus handler.
+        let _ = self.tx.try_send(action);
+    }
+}
+
+/// Rasterise the symbolic icon at `size`×`size` into the `IconPixmap` wire
+/// format: ARGB32, network byte order, rows packed tightly (no rowstride
+/// padding, which gdk-pixbuf may add).
+///
+/// Rendering goes through gdk-pixbuf's SVG loader (librsvg). Without it the
+/// icon list comes back empty and hosts fall back to `icon_name`.
+fn render_icon(svg: &[u8], size: i32) -> Option<ksni::Icon> {
+    use gtk4::gdk_pixbuf::PixbufLoader;
+    use gtk4::prelude::PixbufLoaderExt;
+
+    let loader = PixbufLoader::with_type("svg").ok()?;
+    // Must be set before the data is written: it scales the SVG while parsing
+    // instead of resampling a bitmap afterwards, so every size stays crisp.
+    loader.set_size(size, size);
+    loader.write(svg).ok()?;
+    loader.close().ok()?;
+
+    let pixbuf = loader.pixbuf()?;
+    let pixbuf = if pixbuf.has_alpha() {
+        pixbuf
+    } else {
+        pixbuf.add_alpha(false, 0, 0, 0).ok()?
+    };
+
+    let (width, height) = (pixbuf.width() as usize, pixbuf.height() as usize);
+    let channels = pixbuf.n_channels() as usize;
+    let rowstride = pixbuf.rowstride() as usize;
+    // SAFETY: the pixbuf is owned by this function and not mutated or shared
+    // while the slice is alive.
+    let pixels = unsafe { pixbuf.pixels() };
+
+    let mut data = Vec::with_capacity(width * height * 4);
+    for y in 0..height {
+        let row = &pixels[y * rowstride..y * rowstride + width * channels];
+        for px in row.chunks_exact(channels) {
+            // RGBA -> ARGB
+            data.extend_from_slice(&[px[3], px[0], px[1], px[2]]);
+        }
+    }
+
+    Some(ksni::Icon {
+        width: width as i32,
+        height: height as i32,
+        data,
+    })
+}
+
+impl Tray for SttTray {
+    fn id(&self) -> String {
+        crate::APP_ID.to_string()
+    }
+
+    fn title(&self) -> String {
+        crate::APP_NAME.to_string()
+    }
+
+    /// Only a hint for hosts that resolve `icon_name` themselves — the pixmap
+    /// below is what actually gets drawn. Returns the first theme root that
+    /// really holds our icon so we never advertise a stale or dev-only path.
+    fn icon_theme_path(&self) -> String {
+        // Hosts expect the parent of hicolor/, not the theme directory itself.
+        let bases = [
+            "/usr/share/icons".to_string(),
+            "/usr/local/share/icons".to_string(),
+            format!("{}/icons", gtk4::glib::user_data_dir().to_string_lossy()),
+        ];
+        #[cfg(debug_assertions)]
+        let bases = {
+            let mut bases = Vec::from(bases);
+            bases.push(format!("{}/data/icons", env!("CARGO_MANIFEST_DIR")));
+            bases
+        };
+
+        let icon = format!("{}-symbolic.svg", crate::APP_ID);
+        bases
+            .iter()
+            .find(|base| {
+                // The layouts hosts actually probe, plus the canonical symbolic one.
+                ["hicolor/symbolic/apps", "hicolor/scalable/apps"]
+                    .iter()
+                    .any(|dir| std::path::Path::new(base).join(dir).join(&icon).is_file())
+            })
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    fn icon_name(&self) -> String {
+        // Symbolic (monochrome) variant so the tray shows the small black-and-white
+        // glyph that matches other status-area icons, not the large color icon.
+        format!("{}-symbolic", crate::APP_ID)
+    }
+
+    /// The authoritative icon: raw pixels, so no host-side theme lookup is
+    /// involved. Empty only if rasterising the SVG fails, in which case hosts
+    /// fall back to `icon_name`.
+    fn icon_pixmap(&self) -> Vec<ksni::Icon> {
+        self.icons.clone()
+    }
+
+    fn activate(&mut self, _x: i32, _y: i32) {
+        self.emit(TrayAction::Open);
+    }
+
+    fn menu(&self) -> Vec<MenuItem<Self>> {
+        vec![
+            StandardItem {
+                label: gettext("Start Dictation"),
+                activate: Box::new(|t: &mut Self| t.emit(TrayAction::Dictate)),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: gettext("Transform Selection with AI"),
+                activate: Box::new(|t: &mut Self| t.emit(TrayAction::TransformSelection)),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: gettext("Open"),
+                activate: Box::new(|t: &mut Self| t.emit(TrayAction::Open)),
+                ..Default::default()
+            }
+            .into(),
+            MenuItem::Separator,
+            StandardItem {
+                label: gettext("Quit"),
+                activate: Box::new(|t: &mut Self| t.emit(TrayAction::Quit)),
+                ..Default::default()
+            }
+            .into(),
+        ]
+    }
+}
+
+/// Spawn the tray on the Tokio runtime and return a receiver of tray actions to
+/// be consumed on the glib main loop. The tray lives for the app's lifetime.
+///
+/// Must be called from the main thread: the icons are rasterised here, before
+/// the tray struct is moved onto the Tokio runtime.
+pub fn spawn_tray() -> async_channel::Receiver<TrayAction> {
+    let (tx, rx) = async_channel::unbounded::<TrayAction>();
+
+    let icons: Vec<ksni::Icon> = TRAY_SIZES
+        .iter()
+        .filter_map(|&size| render_icon(TRAY_SVG, size))
+        .collect();
+    if icons.is_empty() {
+        tracing::warn!(
+            "Tray icon could not be rasterised (no gdk-pixbuf SVG loader?); \
+             falling back to icon-name lookup"
+        );
+    }
+
+    crate::application::tokio_runtime().spawn(async move {
+        let tray = SttTray { tx, icons };
+        match tray.spawn().await {
+            Ok(_handle) => {
+                tracing::info!("System tray registered");
+                // Hold the handle for the whole app lifetime; dropping it removes
+                // the tray icon.
+                std::future::pending::<()>().await;
+            }
+            Err(e) => tracing::warn!("System tray unavailable (no host?): {e}"),
+        }
+    });
+    rx
+}

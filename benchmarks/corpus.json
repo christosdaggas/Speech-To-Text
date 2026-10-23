@@ -1,0 +1,11 @@
+{
+  "description": "Original synthetic regression sentences; MIT, same as this repository. Not representative human-speech accuracy data.",
+  "cases": [
+    {"id": "en-basic", "language": "en", "reference": "Please open the window and save this note for tomorrow."},
+    {"id": "en-thanks", "language": "en", "reference": "The meeting is finished. Thank you for watching."},
+    {"id": "en-repeat", "language": "en", "reference": "No no no no. Please keep every word in this sentence."},
+    {"id": "el-basic", "language": "el", "reference": "Ανοίξτε το παράθυρο και αποθηκεύστε αυτή τη σημείωση για αύριο."},
+    {"id": "el-thanks", "language": "el", "reference": "Η συνάντηση τελείωσε. Σας ευχαριστούμε πολύ."},
+    {"id": "el-repeat", "language": "el", "reference": "Όχι όχι όχι όχι. Κρατήστε κάθε λέξη αυτής της πρότασης."}
+  ]
+}

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Christos A. Daggas -->
+<!-- SPDX-License-Identifier: MIT -->
+<component type="desktop-application">
+  <id>com.chrisdaggas.speech-to-text</id>
+  <name>Speech to Text</name>
+  <summary>Local offline speech-to-text transcription using Whisper</summary>
+  <summary xml:lang="de">Lokale Offline-Transkription von Sprache zu Text mit Whisper</summary>
+  <summary xml:lang="el">Τοπική μεταγραφή ομιλίας σε κείμενο, χωρίς σύνδεση, με Whisper</summary>
+  <summary xml:lang="es">Transcripción local de voz a texto sin conexión con Whisper</summary>
+  <summary xml:lang="it">Trascrizione vocale locale e offline con Whisper</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT AND Apache-2.0</project_license>
+  <description>
+    <p>
+      Speech to Text turns your voice and audio recordings into text on your
+      computer. Made for Fedora with the GNOME desktop, tested on Fedora 44.
+      Whisper, Parakeet and Qwen3-ASR process audio locally after downloading a model.
+    </p>
+    <p>
+      Optional AI tools send transcript text to a service you choose. The startup
+      update check contacts GitHub and can be disabled in Settings.
+    </p>
+    <ul>
+      <li>Dictate with a global shortcut and a small floating panel</li>
+      <li>Transcribe audio files and translate to English with Whisper</li>
+      <li>Use Vulkan GPU acceleration with CPU fallback</li>
+      <li>Search transcription history and export text</li>
+      <li>Choose your interface language and a light, dark or system theme</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.chrisdaggas.speech-to-text.desktop</launchable>
+  <url type="homepage">https://chrisdaggas.com</url>
+  <url type="bugtracker">https://github.com/christosdaggas/Speech-To-Text/issues</url>
+  <url type="contact">https://chrisdaggas.com</url>
+  <developer id="com.chrisdaggas">
+    <name>Christos A. Daggas</name>
+  </developer>
+  <branding>
+    <color type="primary" scheme_preference="light">#99c1f1</color>
+    <color type="primary" scheme_preference="dark">#1a5fb4</color>
+  </branding>
+  <content_rating type="oars-1.1" />
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>speech</keyword>
+    <keyword>voice</keyword>
+    <keyword>transcription</keyword>
+    <keyword>whisper</keyword>
+    <keyword>dictation</keyword>
+    <keyword>offline</keyword>
+  </keywords>
+  <releases>
+    <release version="1.0.0" date="2026-10-23">
+      <description>
+        <p>Private, everyday dictation made for Fedora and the GNOME desktop.</p>
+        <ul>
+          <li>Local transcription with Whisper, Parakeet and Qwen3-ASR</li>
+          <li>Global dictation shortcuts, progressive text and safe cancellation</li>
+          <li>Retry failed audio without recording again</li>
+          <li>Searchable history, text export and optional AI tools</li>
+          <li>Full version display and clickable GitHub update notices</li>
+          <li>Fedora RPM with Vulkan acceleration and CPU fallback</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

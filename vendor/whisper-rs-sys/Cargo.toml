@@ -1,0 +1,27 @@
+[package]
+name = "whisper-rs-sys"
+version = "0.15.0"
+edition = "2021"
+rust-version = "1.88.0"
+links = "whisper"
+license = "Unlicense"
+description = "whisper-rs 0.15.0 FFI with pinned whisper.cpp 1.9.5 sources"
+repository = "https://codeberg.org/tazz4843/whisper-rs"
+
+[features]
+coreml = []
+cuda = []
+force-debug = []
+hipblas = []
+intel-sycl = []
+metal = []
+openblas = []
+openmp = []
+vulkan = []
+
+[build-dependencies]
+bindgen = "0.72"
+cfg-if = "1"
+cmake = "0.1"
+fs_extra = "1.3"
+semver = "1.0"

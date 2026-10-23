@@ -1,0 +1,1579 @@
+/* Copyright (C) 2026 Christos A. Daggas */
+/* SPDX-License-Identifier: MIT */
+
+.navigation-sidebar {
+    background-color: transparent;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.sidebar-scroll,
+.sidebar-scroll > viewport {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.sidebar-scroll undershoot,
+.sidebar-scroll undershoot.top,
+.sidebar-scroll undershoot.bottom,
+.sidebar-scroll overshoot {
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+.sidebar-box {
+    background-color: @window_bg_color;
+    color: @sidebar_fg_color;
+    transition: background-color 200ms ease-out;
+}
+
+.sidebar-box .brand-mark {
+    background-color: @success_bg_color;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+popover.stt-theme-menu {
+    background: none;
+    box-shadow: none;
+}
+
+popover.stt-theme-menu > arrow {
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+popover.stt-theme-menu > contents {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+    border-radius: 12px;
+    border: 1px solid alpha(@shade_color, 0.5);
+    box-shadow: 0 6px 18px alpha(black, 0.18);
+    padding: 0;
+}
+
+.card {
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.card:hover {
+    box-shadow: 0 6px 16px alpha(black, 0.14);
+    border-color: alpha(@accent_color, 0.25);
+}
+
+.offline-badge image {
+    color: @success_color;
+    -gtk-icon-size: 13px;
+}
+
+.transcript-frame {
+    background-color: alpha(@view_bg_color, 0.65);
+    border: 1px solid alpha(@shade_color, 0.30);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px alpha(black, 0.05);
+}
+
+.transcript-text {
+    font-size: 1.05em;
+    line-height: 1.6;
+    color: @view_fg_color;
+    background-color: transparent;
+}
+
+.message-bubble {
+    background-color: alpha(@card_bg_color, 0.72);
+    border: 1px solid alpha(@shade_color, 0.30);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px alpha(black, 0.04);
+    transition: background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.message-bubble:hover {
+    background-color: alpha(@card_bg_color, 0.95);
+    box-shadow: 0 3px 10px alpha(black, 0.08);
+}
+
+.message-bubble:focus-within {
+    outline: 2px solid alpha(@accent_color, 0.5);
+    outline-offset: -2px;
+}
+
+.message-bubble.selected {
+    border-color: @accent_bg_color;
+    background-color: alpha(@accent_bg_color, 0.12);
+}
+
+.message-bubble.live-preview {
+    border-style: dashed;
+    opacity: 0.78;
+}
+
+.bubble-text {
+    font-size: 1.05em;
+    line-height: 1.6;
+    color: @view_fg_color;
+}
+
+.bubble-copy-btn {
+    opacity: 0.5;
+    transition: opacity 150ms ease;
+}
+
+.bubble-copy-btn:hover,
+.bubble-copy-btn:focus {
+    opacity: 1.0;
+}
+
+.transform-action,
+.transform-action > button {
+    border-radius: 12px;
+}
+
+.bottom-panel,
+.status-bar {
+    background-color: @sidebar_bg_color;
+}
+
+.waveform-frame {
+    background-color: alpha(@view_bg_color, 0.5);
+    border: 1px solid alpha(@shade_color, 0.30);
+    border-radius: 10px;
+    padding: 0;
+}
+
+.confidence-bar {
+    border-radius: 4px;
+}
+
+.confidence-bar block.filled {
+    background-color: @accent_bg_color;
+    border-radius: 4px;
+}
+
+.confidence-bar block.low {
+    background-color: @error_color;
+}
+
+.recording-indicator {
+    color: @success_color;
+}
+
+@keyframes recording-pulse {
+    0%   { opacity: 1.0; }
+    50%  { opacity: 0.3; }
+    100% { opacity: 1.0; }
+}
+
+.recording-pulse {
+    animation: recording-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes record-ring {
+    0%   { opacity: 0.55; }
+    100% { opacity: 0.0; }
+}
+
+.controls-panel button {
+    border-radius: 8px;
+}
+
+.hero-record {
+    min-width: 78px;
+    min-height: 78px;
+    padding: 0;
+    box-shadow: 0 6px 18px alpha(@accent_color, 0.40);
+    transition: box-shadow 180ms ease;
+}
+
+.hero-record:hover {
+    box-shadow: 0 9px 24px alpha(@accent_color, 0.52);
+}
+
+.hero-record image {
+    -gtk-icon-size: 30px;
+}
+
+.hero-recording {
+    background-color: @error_bg_color;
+    color: @error_fg_color;
+    box-shadow: 0 6px 18px alpha(@error_color, 0.45);
+    animation: hero-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes hero-pulse {
+    0%, 100% {
+        box-shadow: 0 6px 18px alpha(@error_color, 0.45);
+    }
+    50% {
+        box-shadow: 0 6px 18px alpha(@error_color, 0.45), 0 0 0 10px alpha(@error_color, 0.16);
+    }
+}
+
+.translate-toggle:checked:hover {
+    background-image: image(alpha(white, 0.08));
+}
+
+.ai-toggle:checked:hover {
+    background-image: image(alpha(white, 0.08));
+}
+
+.stop-action {
+    background-color: @success_bg_color;
+    color: @success_fg_color;
+}
+
+.stop-action:hover {
+    background-image: image(alpha(currentColor, 0.07));
+}
+
+.stop-action:active {
+    background-image: image(alpha(currentColor, 0.16));
+}
+
+.stop-action:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: -2px;
+}
+
+.stop-action:disabled {
+    filter: opacity(0.5);
+}
+
+.gpu-status-panel levelbar block.filled {
+    background-color: @accent_bg_color;
+    border-radius: 3px;
+}
+
+.gpu-status-panel levelbar block.filled.warning {
+    background-color: @warning_color;
+}
+
+.gpu-status-panel levelbar block.filled.critical {
+    background-color: @error_color;
+}
+
+.model-loaded {
+    background-color: @success_bg_color;
+    color: @success_fg_color;
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-weight: 700;
+}
+
+.model-loading {
+    background-color: @warning_bg_color;
+    color: @warning_fg_color;
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-weight: 700;
+}
+
+.model-error {
+    background-color: @error_bg_color;
+    color: @error_fg_color;
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-weight: 700;
+}
+
+.status-dot {
+    min-width: 14px;
+    min-height: 14px;
+}
+
+.status-dot.error {
+    color: @error_color;
+}
+
+.history-row {
+    background-color: alpha(@view_bg_color, 0.5);
+    border: 1px solid alpha(@shade_color, 0.28);
+    border-radius: 12px;
+    padding: 10px 12px;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.history-row:hover {
+    background-color: @card_bg_color;
+    border-color: alpha(@accent_color, 0.35);
+    box-shadow: 0 4px 12px alpha(black, 0.10);
+}
+
+.history-row:focus-within {
+    background-color: alpha(@accent_color, 0.10);
+    border-color: @accent_bg_color;
+}
+
+.wizard-feature-row {
+    padding: 4px 0;
+}
+
+.monospace {
+    font-family: monospace;
+}
+
+.caption-heading {
+    font-size: 0.85em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: alpha(@window_fg_color, 0.55);
+}
+
+.navigation-sidebar row.sidebar-nav-row {
+    min-height: 48px;
+    margin: 2px 8px;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.sidebar-nav-content {
+    min-height: 48px;
+    padding: 0 12px;
+    margin: 0;
+}
+
+.sidebar-nav-label {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.4;
+    padding: 6px 0;
+    margin: 0;
+}
+
+.navigation-sidebar row:selected .sidebar-nav-label {
+    color: @accent_bg_color;
+}
+
+.navigation-sidebar row:selected .sidebar-nav-content image {
+    color: @accent_bg_color;
+}
+
+.navigation-sidebar row:hover:not(:selected) {
+    background-color: alpha(@window_fg_color, 0.06);
+}
+
+.navigation-sidebar row:hover:not(:selected) .sidebar-nav-label {
+    color: @window_fg_color;
+}
+
+comborow popover listview row:selected {
+    background-color: transparent;
+}
+
+.sidebar-collapsed .navigation-sidebar row.sidebar-nav-row {
+    padding: 0;
+    margin: 2px 4px;
+}
+
+.sidebar-collapsed .sidebar-nav-content {
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-collapsed .navigation-sidebar image {
+    margin: 0;
+}
+
+.theme-selector {
+    border-radius: 50%;
+    border: 2px solid alpha(currentColor, 0.3);
+    padding: 0;
+    margin: 0;
+}
+
+.theme-default {
+    background: conic-gradient(from 135deg, #ffffff 0deg, #ffffff 180deg, #303030 180deg, #303030 360deg);
+    background-size: 100% 100%;
+    background-origin: border-box;
+}
+
+.theme-light {
+    background-color: #ffffff;
+    border-color: alpha(#000000, 0.15);
+}
+
+.theme-dark {
+    background-color: #303030;
+}
+
+.theme-button {
+    padding: 4px;
+    min-width: 52px;
+    min-height: 52px;
+}
+
+.theme-button:checked {
+    background-color: alpha(@accent_color, 0.15);
+    border-radius: 50%;
+}
+
+.theme-button:checked .theme-selector {
+    border-color: @accent_color;
+    border-width: 3px;
+}
+
+.theme-button:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+.theme-check {
+    color: @accent_color;
+    background-color: @popover_bg_color;
+    border-radius: 50%;
+    padding: 2px;
+    -gtk-icon-size: 16px;
+}
+
+.menu-item {
+    border-radius: 8px;
+    margin: 1px 0;
+    transition: background-color 100ms ease;
+}
+
+.menu-item:hover {
+    background-color: alpha(@popover_fg_color, 0.08);
+}
+
+.menu-item:active {
+    background-color: alpha(@popover_fg_color, 0.12);
+}
+
+.menu-item:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: -2px;
+}
+
+/* The clickable "vX.Y.Z available" button in the status bar. Kept compact so
+   it reads as a status chip, with a hover to make the click affordance clear. */
+.update-indicator {
+    min-height: 0;
+    padding: 1px 7px;
+    border-radius: 7px;
+}
+
+.update-indicator:hover {
+    background-color: alpha(@error_color, 0.12);
+}
+
+.mini-panel-chip {
+    font-weight: 600;
+    color: @accent_color;
+    background-color: alpha(@accent_bg_color, 0.18);
+    border: 1px solid alpha(@accent_bg_color, 0.35);
+    border-radius: 999px;
+    padding: 2px 10px;
+}
+
+.mini-panel-preview {
+    background-color: alpha(@view_bg_color, 0.6);
+    border: 1px solid alpha(@shade_color, 0.35);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.mp-dot {
+    min-width: 10px;
+    min-height: 10px;
+    border-radius: 999px;
+    background-color: @error_color;
+}
+
+.mp-dot.rec {
+    background-color: @error_color;
+}
+
+.mp-dot.ok {
+    background-color: @success_color;
+}
+
+.mp-state {
+    font-weight: 700;
+}
+
+.mp-meta {
+    font-size: 12px;
+    color: alpha(@window_fg_color, 0.55);
+}
+
+.mp-timer {
+    font-size: 40px;
+    font-weight: 700;
+}
+
+.mp-cs {
+    font-size: 16px;
+    font-weight: 700;
+    color: alpha(@window_fg_color, 0.45);
+}
+
+.mp-title {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.mp-wave {
+    background-color: transparent;
+}
+
+.mp-led {
+    min-width: 9px;
+    min-height: 9px;
+    border-radius: 2px;
+    background-color: alpha(@window_fg_color, 0.14);
+}
+
+.mp-led.on.y {
+    background-color: @warning_color;
+}
+
+.mp-led.on.r {
+    background-color: @error_color;
+}
+
+.mp-seg {
+    min-width: 4px;
+    min-height: 13px;
+    border-radius: 3px;
+    background-color: alpha(@window_fg_color, 0.12);
+    transition: background-color 120ms ease-out;
+}
+
+.mp-seg.on {
+    background-color: @accent_bg_color;
+}
+
+.mp-transcript {
+    font-size: 15px;
+}
+
+.mp-transcript-box {
+    background-color: alpha(@window_fg_color, 0.04);
+    border: 1px solid alpha(@window_fg_color, 0.16);
+    border-radius: 10px;
+    padding: 12px;
+    min-height: 84px;
+}
+
+.mp-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: @success_color;
+    background-color: alpha(@success_color, 0.16);
+    border: 1px solid alpha(@success_color, 0.35);
+    border-radius: 7px;
+    padding: 2px 8px;
+    margin: 2px;
+}
+
+.mp-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 7px 12px;
+}
+
+.mp-btn.mp-copy {
+    background-color: @success_bg_color;
+    color: @success_fg_color;
+}
+
+.mini-panel {
+    background-color: @window_bg_color;
+    background-image: image(@card_bg_color);
+}
+
+.mini-panel headerbar {
+    background-color: @window_bg_color;
+    background-image: image(@card_bg_color);
+    box-shadow: none;
+    border-bottom: none;
+}
+
+.brand-mark {
+    min-width: 26px;
+    min-height: 26px;
+    padding: 0;
+    color: white;
+    background-color: @success_bg_color;
+    border-radius: 8px;
+}
+
+.header-page-title {
+    font-size: 1.05em;
+    font-weight: 700;
+    margin-left: 8px;
+}
+
+.header-model {
+    background-color: @card_bg_color;
+    border: 1px solid alpha(@shade_color, 0.28);
+    border-radius: 999px;
+    padding: 2px 8px 2px 10px;
+}
+
+.header-model-dropdown,
+.header-model-dropdown button {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+}
+
+.light-theme .header-model,
+.light-theme .header-model-dropdown,
+.light-theme .header-model-dropdown button,
+.light-theme .header-model-dropdown image,
+.light-theme .header-model-dropdown arrow {
+    color: @window_fg_color;
+}
+
+.light-theme .settings-page preferencesgroup > box > box,
+.light-theme .settings-page list.boxed-list,
+.light-theme .settings-page list.content,
+.light-theme .settings-page list.boxed-list-separate > row,
+.light-theme .settings-page .card,
+.light-theme .settings-page .card:hover {
+    box-shadow: none;
+}
+
+.offline-badge {
+    background-color: alpha(@success_bg_color, 0.16);
+    color: @success_color;
+    border: 1px solid alpha(@success_bg_color, 0.35);
+    border-radius: 999px;
+    padding: 5px 13px;
+    font-size: 0.85em;
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+.sidebar-section-header {
+    margin-top: 14px;
+    margin-bottom: 6px;
+    margin-left: 4px;
+    color: alpha(@sidebar_fg_color, 0.45);
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.navigation-sidebar row.sidebar-section-row,
+.navigation-sidebar row.sidebar-section-row:hover {
+    background: transparent;
+    padding: 0;
+    margin: 0 8px;
+    min-height: 28px;
+    box-shadow: none;
+}
+
+.navigation-sidebar row:selected {
+    background-color: alpha(@accent_bg_color, 0.14);
+}
+
+.controls-area,
+.controls-panel {
+    background-color: transparent;
+}
+
+.hero-subtitle,
+.hero-hint {
+    color: alpha(@window_fg_color, 0.56);
+}
+
+button.hero-record {
+    min-width: 96px;
+    min-height: 96px;
+    border-radius: 999px;
+    padding: 0;
+    box-shadow: 0 9px 24px alpha(@accent_color, 0.38);
+}
+
+button.hero-record:hover {
+    box-shadow: 0 11px 28px alpha(@accent_color, 0.48);
+}
+
+.transcript-timer {
+    font-weight: 700;
+}
+
+.transcript-metadata {
+    color: alpha(@window_fg_color, 0.55);
+    font-size: 0.88em;
+}
+
+.transcript-placeholder {
+    color: alpha(@window_fg_color, 0.48);
+    font-size: 1.02em;
+}
+
+.transcript-card .bubble-text {
+    font-size: 1.08em;
+    line-height: 1.62;
+}
+
+.variant-dropdown,
+.variant-dropdown button,
+.footer-action,
+.ai-action {
+    border-radius: 10px;
+}
+
+.copied-badge {
+    color: @success_color;
+    background-color: alpha(@success_bg_color, 0.14);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-weight: 700;
+}
+
+.footer-stop {
+    padding-left: 14px;
+    padding-right: 14px;
+    font-weight: 700;
+}
+
+.waveform {
+    background-color: transparent;
+    color: @accent_bg_color;
+}
+
+.status-bar caption,
+.status-bar .caption {
+    font-size: 0.82em;
+    font-weight: 500;
+}
+
+.gpu-status-panel .card {
+    background-color: @card_bg_color;
+    border: 1px solid alpha(@shade_color, 0.30);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 7px alpha(black, 0.10);
+}
+
+.transcription-content,
+.controls-area,
+.controls-panel,
+.transcript-view {
+    background-color: transparent;
+}
+
+.hero-copy {
+    padding-left: 0;
+}
+
+.hero-kicker {
+    margin-bottom: 7px;
+    color: alpha(@window_fg_color, 0.55);
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.variant-dropdown,
+.variant-dropdown button,
+.footer-action,
+.ai-action,
+.transform-action,
+.transform-action > button {
+    border-radius: 10px;
+}
+
+.transcript-card .mp-seg {
+    min-height: 4px;
+    border-radius: 999px;
+    background-color: alpha(@window_fg_color, 0.09);
+}
+
+.transcript-card .mp-seg.on {
+    background-color: @accent_bg_color;
+}
+
+.sidebar-header,
+headerbar.content-headerbar {
+    min-height: 52px;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    border-bottom: none;
+    box-shadow: none;
+    background-image: none;
+}
+
+.sidebar-header {
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: transparent;
+}
+
+.sidebar-header button.sidebar-toggle {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+.sidebar-collapsed .sidebar-header {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+headerbar.content-headerbar {
+    background-color: transparent;
+}
+
+.mode-label {
+    color: alpha(@window_fg_color, 0.48);
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.hero-toggle:hover {
+    background-color: alpha(@window_fg_color, 0.07);
+}
+
+.tool-toggle-content {
+    color: inherit;
+}
+
+.translate-toggle:checked {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    box-shadow: 0 3px 10px alpha(@accent_color, 0.30);
+}
+
+.ai-toggle:checked {
+    background-color: #9141ac;
+    color: white;
+    box-shadow: 0 3px 10px alpha(#9141ac, 0.35);
+}
+
+.footer-action,
+.variant-dropdown,
+.variant-dropdown button {
+    min-height: 30px;
+    padding: 3px 10px;
+    background-color: alpha(@card_bg_color, 0.82);
+    background-image: none;
+    border: 1px solid alpha(@shade_color, 0.22);
+    box-shadow: 0 1px 2px alpha(black, 0.06);
+    border-radius: 9px;
+    transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.footer-action:hover,
+.variant-dropdown button:hover {
+    background-color: @card_bg_color;
+    border-color: alpha(@accent_color, 0.24);
+}
+
+.ai-action {
+    color: #9141ac;
+    background-color: alpha(#9141ac, 0.13);
+    border: none;
+    font-weight: 700;
+    min-height: 30px;
+    padding: 3px 10px;
+    box-shadow: none;
+    border-radius: 9px;
+}
+
+.controls-panel {
+    background-color: transparent;
+    padding: 0;
+    margin-left: 0;
+    margin-right: 0;
+    background: transparent;
+}
+
+.hero-action {
+    min-width: 120px;
+}
+
+.hero-state-dot {
+    min-width: 7px;
+    min-height: 7px;
+    border-radius: 999px;
+}
+
+.hero-record-label {
+    margin-top: 0;
+    color: alpha(@window_fg_color, 0.62);
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.transcript-view {
+    background-color: transparent;
+    background: transparent;
+}
+
+.transcript-card {
+    background-color: @card_bg_color;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin-top: 0;
+    margin-bottom: 0;
+    background: transparent;
+}
+
+.transcript-card.recording {
+    border-color: alpha(@accent_color, 0.34);
+    border: none;
+}
+
+.transcript-empty-state {
+    color: alpha(@window_fg_color, 0.52);
+}
+
+.transcript-card .message-bubble,
+.transcript-card .message-bubble.selected {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 10px;
+}
+
+button.hero-record:hover,
+button.hero-record.suggested-action:hover,
+button.hero-record.hero-recording:hover {
+    background-color: #ee5147;
+    background-image: linear-gradient(155deg, #ff7d72, #f04136);
+    box-shadow: 0 0 0 12px alpha(#ff453a, 0.10),
+                0 0 0 26px alpha(#ff453a, 0.05),
+                0 18px 44px alpha(#e43d33, 0.42),
+                inset 0 1px 0 alpha(white, 0.28);
+}
+
+@keyframes orb-pulse {
+    0% {
+        box-shadow: 0 0 0 0 alpha(@error_color, 0.35),
+                    0 16px 38px alpha(#e43d33, 0.35),
+                    inset 0 1px 0 alpha(white, 0.25);
+    }
+    100% {
+        box-shadow: 0 0 0 26px alpha(@error_color, 0.0),
+                    0 16px 38px alpha(#e43d33, 0.35),
+                    inset 0 1px 0 alpha(white, 0.25);
+    }
+}
+
+separator.tool-separator {
+    min-height: 0;
+    min-width: 0;
+    background-color: alpha(@shade_color, 0.25);
+    margin: 0 3px;
+    background: transparent;
+}
+
+.transcript-card-body {
+    background-color: transparent;
+    border-top: 1px solid alpha(@shade_color, 0.18);
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.transcript-card .message-bubble {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 10px;
+    padding: 4px 14px;
+    margin-bottom: 4px;
+    background: none;
+    transition: background-color 140ms ease;
+}
+
+.transcript-card .message-bubble:hover {
+    background-color: alpha(@window_fg_color, 0.045);
+}
+
+.transcript-card .message-bubble.selected {
+    background-color: alpha(@accent_bg_color, 0.09);
+    border: none;
+    margin-bottom: 4px;
+    padding: 4px 14px;
+    border-radius: 10px;
+    background: none;
+    box-shadow: none;
+}
+
+.transcript-card .message-bubble.live-preview,
+.transcript-card .message-bubble.live-preview:hover {
+    background-color: transparent;
+    border: none;
+    padding: 4px 14px;
+}
+
+.transcription-page {
+    background-color: transparent;
+    background-image: none;
+}
+
+.workspace-surface {
+    margin-left: 30px;
+    margin-right: 30px;
+    margin-top: 20px;
+    margin-bottom: 24px;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 8px 24px 14px;
+    background-image: none;
+}
+
+.hero-zone {
+    padding: 24px 22px 18px;
+    min-height: 0;
+    border-bottom: 1px solid alpha(@window_fg_color, 0.06);
+    border: none;
+    background-image: none;
+}
+
+.hero-text {
+    margin: 0;
+}
+
+button.hero-record,
+button.hero-record.suggested-action,
+button.hero-record.hero-recording {
+    min-width: 72px;
+    min-height: 72px;
+    padding: 0;
+    color: white;
+    background-color: #34c759;
+    background-image: none;
+    border: none;
+    border-radius: 999px;
+    box-shadow: 0 1px 3px alpha(black, 0.20), inset 0 1px 0 alpha(white, 0.18);
+    transition: background-color 150ms ease, box-shadow 150ms ease;
+    animation: none;
+}
+
+button.hero-record:hover,
+button.hero-record.suggested-action:hover {
+    background-image: none;
+    box-shadow: 0 2px 6px alpha(black, 0.24), inset 0 1px 0 alpha(white, 0.20);
+    background-color: #40d364;
+}
+
+button.hero-record.hero-recording {
+    background-color: #ff3b30;
+    animation: none;
+}
+
+button.hero-record.hero-recording:hover {
+    background-color: #ff544a;
+    background-image: none;
+    box-shadow: 0 2px 6px alpha(black, 0.24), inset 0 1px 0 alpha(white, 0.20);
+}
+
+.hero-state {
+    border-radius: 999px;
+    padding: 0;
+    margin-bottom: 7px;
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: none;
+    background: none;
+    margin: 0;
+    margin-top: 0;
+    background-color: transparent;
+}
+
+.hero-state.ready {
+    color: #34c759;
+    background-color: transparent;
+    background: none;
+    border: none;
+}
+
+.hero-state.recording {
+    color: #ff3b30;
+    background-color: transparent;
+    background: none;
+    border: none;
+}
+
+.hero-state.ready .hero-state-dot {
+    background-color: #34c759;
+    box-shadow: none;
+}
+
+.hero-state.recording .hero-state-dot {
+    background-color: #ff3b30;
+    box-shadow: none;
+    animation: recording-pulse 1.2s ease-in-out infinite;
+}
+
+.hero-title {
+    font-size: 1.38em;
+    font-weight: 700;
+    color: @window_fg_color;
+    margin-bottom: 0;
+    letter-spacing: -0.01em;
+    margin-top: 6px;
+}
+
+.hero-subtitle {
+    font-size: 0.9em;
+    margin-bottom: 18px;
+    color: alpha(@window_fg_color, 0.52);
+    line-height: 1.4;
+    margin-top: 3px;
+}
+
+.hero-hint {
+    font-size: 0.8em;
+    color: alpha(@window_fg_color, 0.40);
+    margin-top: 11px;
+    padding: 0;
+    border-radius: 999px;
+    border: none;
+    background-color: transparent;
+    font-weight: 500;
+    background: none;
+}
+
+.rec-tools {
+    margin-top: 13px;
+}
+
+.rec-tools .rec-tool {
+    min-height: 30px;
+    padding: 3px 15px;
+    border: none;
+    border-radius: 8px;
+    color: alpha(@window_fg_color, 0.80);
+    background-color: alpha(@window_fg_color, 0.07);
+    box-shadow: none;
+    font-size: 0.85em;
+    font-weight: 500;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.rec-tools .rec-tool:hover {
+    color: @window_fg_color;
+    background-color: alpha(@window_fg_color, 0.12);
+    border-color: alpha(@shade_color, 0.40);
+}
+
+.rec-tools .rec-tool.destructive-action {
+    color: #ff3b30;
+    border-color: alpha(@error_color, 0.25);
+    background-color: alpha(#ff3b30, 0.10);
+}
+
+.rec-tools .rec-tool.destructive-action:hover {
+    background-color: alpha(#ff3b30, 0.17);
+    border-color: alpha(@error_color, 0.35);
+}
+
+.hero-mode-row {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    min-height: 0;
+    padding: 14px 22px 18px;
+    margin: 0;
+    border-bottom: 1px solid alpha(@shade_color, 0.26);
+    background-color: alpha(@card_bg_color, 0.62);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.mode-switcher {
+    background-color: alpha(@window_fg_color, 0.07);
+    border: none;
+    border-radius: 9px;
+    padding: 2px;
+}
+
+.mode-switcher .mode-chip,
+.settings-tabs button {
+    background: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 7px;
+    padding: 3px 14px;
+    color: alpha(@window_fg_color, 0.62);
+    font-weight: 500;
+    min-height: 28px;
+    transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    font-size: 0.86em;
+}
+
+.mode-switcher .mode-chip:hover:not(:checked),
+.settings-tabs button:hover:not(:checked) {
+    color: @window_fg_color;
+    background-color: alpha(@window_fg_color, 0.05);
+}
+
+.mode-switcher .mode-chip:checked,
+.settings-tabs button:checked {
+    background-color: @card_bg_color;
+    color: @window_fg_color;
+    box-shadow: 0 1px 2px alpha(black, 0.14);
+    background-image: none;
+}
+
+.hero-actions {
+
+}
+
+.hero-toggle,
+.hero-toggle > button {
+    border-radius: 8px;
+    padding: 4px 14px;
+    font-weight: 500;
+    min-height: 32px;
+    border: none;
+    background-color: alpha(@window_fg_color, 0.07);
+    box-shadow: none;
+    transition: background-color 120ms ease, color 120ms ease;
+    color: alpha(@window_fg_color, 0.74);
+    background: transparent;
+    font-size: 0.86em;
+}
+
+.hero-toggle:hover,
+.hero-toggle:checked:hover {
+    color: @window_fg_color;
+    background-color: alpha(@window_fg_color, 0.12);
+    border-color: alpha(@window_fg_color, 0.16);
+    border: none;
+}
+
+.translate-toggle:checked,
+.ai-toggle:checked {
+    box-shadow: none;
+    color: white;
+    background-color: @accent_bg_color;
+    border-color: alpha(@accent_bg_color, 0.35);
+    border: none;
+}
+
+.open-file-btn {
+    color: alpha(@window_fg_color, 0.74);
+}
+
+.transcript-card-header {
+    padding: 14px 0 9px;
+    border-bottom: 1px solid alpha(@window_fg_color, 0.06);
+    min-height: 0;
+    background: transparent;
+}
+
+.transcript-section-title {
+    margin-right: 4px;
+    color: alpha(@window_fg_color, 0.42);
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.transcript-card .waveform {
+    margin-left: 18px;
+    margin-right: 18px;
+    color: @accent_color;
+    opacity: 0.85;
+    border-top: none;
+    border-bottom: none;
+    transition: opacity 180ms ease;
+}
+
+.transcript-card.recording .waveform {
+    opacity: 1.0;
+    color: #ff3b30;
+}
+
+.transcript-empty-glyph {
+    min-width: 0;
+    min-height: 0;
+    margin-bottom: 6px;
+    color: @accent_color;
+    background-color: alpha(@accent_bg_color, 0.12);
+    border-radius: 999px;
+    background-image: none;
+    padding: 15px;
+}
+
+.transcript-empty-title {
+    color: @window_fg_color;
+    font-size: 0.95em;
+    font-weight: 600;
+}
+
+.transcript-empty-subtitle {
+    color: alpha(@window_fg_color, 0.48);
+    font-size: 0.85em;
+}
+
+.transcript-card-footer {
+    padding: 9px 0 0;
+    background-color: alpha(@card_bg_color, 0.38);
+    border-top: 1px solid alpha(@window_fg_color, 0.06);
+    border-radius: 0;
+    min-height: 0;
+    background: transparent;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border: none;
+}
+
+.transcript-action-group {
+    padding: 2px;
+    border-radius: 9px;
+    background-color: alpha(@window_fg_color, 0.05);
+}
+
+.transcript-action-group .footer-action,
+.transcript-action-group .ai-action,
+.transcript-action-group .transform-action,
+.transcript-action-group .transform-action > button {
+    min-height: 28px;
+    padding: 3px 11px;
+    border: none;
+    border-radius: 7px;
+    color: alpha(@window_fg_color, 0.74);
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.86em;
+    font-weight: 500;
+}
+
+.transcript-action-group .footer-action:hover,
+.transcript-action-group .ai-action:hover,
+.transcript-action-group .transform-action:hover,
+.transcript-action-group .transform-action > button:hover {
+    color: @window_fg_color;
+    background-color: alpha(@window_fg_color, 0.09);
+}
+
+.transcript-action-group .footer-cancel {
+    color: alpha(@window_fg_color, 0.72);
+}
+
+.transcript-action-group .footer-cancel:hover {
+    color: @window_fg_color;
+    background-color: alpha(@window_fg_color, 0.10);
+}
+
+.transcript-action-group .footer-stop {
+    color: #ff3b30;
+    background-color: alpha(#ff3b30, 0.10);
+}
+
+.transcript-action-group .footer-stop:hover {
+    background-color: alpha(#ff3b30, 0.17);
+}
+
+.variant-dropdown,
+.variant-dropdown button {
+    min-height: 28px;
+    padding: 3px 9px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.86em;
+    font-weight: 500;
+    color: alpha(@window_fg_color, 0.7);
+}
+
+.variant-dropdown button:hover {
+    background-color: alpha(@window_fg_color, 0.07);
+}
+
+.transcript-card-body scrollbar {
+    background: transparent;
+    border: none;
+}
+
+.transcript-card-body scrollbar slider {
+    min-width: 7px;
+    min-height: 7px;
+    border-radius: 8px;
+    background-color: alpha(@window_fg_color, 0.20);
+}
+
+.transcript-card-body scrollbar slider:hover {
+    background-color: alpha(@window_fg_color, 0.36);
+}
+
+.light-theme .settings-page list.boxed-list,
+.light-theme .settings-page list.content,
+.light-theme .settings-page list.boxed-list-separate > row,
+.light-theme .settings-page .card,
+.light-theme .history-page list.boxed-list,
+.light-theme .history-page list.content,
+.light-theme .history-page list.boxed-list-separate > row,
+.light-theme .history-page .card,
+.light-theme .help-page .card {
+    background-color: alpha(@window_fg_color, 0.035);
+    border: 1px solid alpha(@window_fg_color, 0.13);
+    box-shadow: none;
+}
+
+.light-theme .settings-page list.boxed-list:hover,
+.light-theme .settings-page list.content:hover,
+.light-theme .settings-page list.boxed-list-separate > row:hover,
+.light-theme .settings-page .card:hover,
+.light-theme .history-page list.boxed-list:hover,
+.light-theme .history-page list.content:hover,
+.light-theme .history-page list.boxed-list-separate > row:hover,
+.light-theme .history-page .card:hover,
+.light-theme .help-page .card:hover {
+    border-color: alpha(@window_fg_color, 0.13);
+    box-shadow: none;
+}
+
+.light-theme .header-model {
+    background-color: alpha(@window_fg_color, 0.035);
+    border: 1px solid alpha(@window_fg_color, 0.13);
+    box-shadow: none;
+}
+
+.light-theme .header-model:hover {
+    background-color: alpha(@window_fg_color, 0.055);
+    border-color: alpha(@window_fg_color, 0.13);
+    box-shadow: none;
+}
+
+/* Settings navigation shares the compact transcription mode control. */
+.settings-tabs-container {
+    background-color: transparent;
+}
+
+.settings-tabs button:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: 2px;
+}
+
+/* The right-hand surface is painted once by .content-area. Pages and their
+ * scrollers stay transparent so tab/page switches never show a second colour. */
+.content-area {
+    background-color: @sidebar_bg_color;
+}
+
+.light-theme .sidebar-box {
+    background-color: @sidebar_bg_color;
+}
+
+.light-theme .content-area {
+    background-color: #ffffff;
+}
+
+.light-theme headerbar.content-headerbar {
+    background-color: transparent;
+}
+
+.sidebar-app-title {
+    font-weight: 700;
+}
+
+.history-page,
+.settings-page,
+.help-page {
+    background-color: transparent;
+}
+
+.content-area .settings-page scrolledwindow,
+.content-area .settings-page scrolledwindow > viewport,
+.content-area .history-page scrolledwindow,
+.content-area .history-page scrolledwindow > viewport,
+.content-area .help-page scrolledwindow,
+.content-area .help-page scrolledwindow > viewport {
+    background-color: transparent;
+}
+
+.dark-theme headerbar.content-headerbar {
+    background-color: transparent;
+    border-bottom: none;
+}
+
+.dark-theme .header-model {
+    background-color: alpha(black, 0.2);
+}
+
+.status-bar {
+    background-color: transparent;
+    border-top: none;
+    padding: 2px 16px;
+    min-height: 28px;
+}
+
+.dark-theme .navigation-sidebar row:selected .sidebar-nav-label,
+.dark-theme .navigation-sidebar row:selected .sidebar-nav-content image {
+    color: #ffffff;
+}
+
+.status-dot.success {
+    color: #34c759;
+}
+
+.gpu-status-panel label.success {
+    color: #34c759;
+}
+
+.mp-led.on.g {
+    background-color: #34c759;
+}
+
+.gpu-status-panel {
+    margin-top: 0;
+}
+
+.gpu-status-panel .card,
+.gpu-status-panel .card:hover {
+    background-color: transparent;
+    border: none;
+    border-top: 1px solid alpha(@shade_color, 0.20);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 6px 4px;
+}
+
+/* Multi-line input fields (Dictionary vocabulary, LLM prompt) read as cards,
+   not as bare white/black text wells: dark paints the frame with the card
+   colour, light with the same flat grey fill and border the light-theme
+   cards use. The text view is transparent so the frame shows through. */
+.dark-theme .field-frame {
+    background-color: @card_bg_color;
+}
+
+.light-theme .field-frame {
+    background-color: alpha(@window_fg_color, 0.035);
+    border: 1px solid alpha(@window_fg_color, 0.13);
+}
+
+.field-frame textview,
+.field-frame textview > text {
+    background-color: transparent;
+}

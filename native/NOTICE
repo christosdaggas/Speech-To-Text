@@ -1,0 +1,9 @@
+The sherpa-onnx v1.13.8 C ABI declarations in parakeet-abi.h are derived from:
+https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.8/sherpa-onnx/c-api/c-api.h
+Copyright (c) 2023 Xiaomi Corporation. Licensed under Apache-2.0.
+Declarations were reduced to the offline recognition interface; field layouts
+are unchanged. The application adapter and worker are MIT licensed.
+
+The vendored whisper.cpp 1.9.5 / ggml sources are MIT licensed; see the bundled
+LICENSE-whisper.cpp. The Rust FFI integration is derived from whisper-rs-sys
+0.15.0 (Unlicense); see LICENSE-whisper-rs-sys and vendor/whisper-rs-sys/UPSTREAM.md.

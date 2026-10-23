@@ -1,0 +1,2 @@
+# Preserve hash-verified upstream source, including its existing final blank lines.
+vendor/whisper-rs-sys/whisper.cpp/** whitespace=-blank-at-eof
